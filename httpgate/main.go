@@ -1,8 +1,11 @@
 package httpgate
 
 import (
+	_ "embed"
 	"fmt"
+	"html/template"
 	"net/http"
+	"time"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
@@ -10,6 +13,9 @@ import (
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
 	"go.uber.org/zap"
 )
+
+//go:embed index.html
+var indexSource string
 
 func init() {
 	caddy.RegisterModule(HTTPGate{})
@@ -21,7 +27,8 @@ type HTTPGate struct {
 	// Client challenge intensity mode
 	Mode string `json:"mode,omitempty"`
 
-	logger *zap.Logger
+	indexTemplate *template.Template
+	logger        *zap.Logger
 }
 
 // CaddyModule returns the Caddy module information.
@@ -35,6 +42,12 @@ func (HTTPGate) CaddyModule() caddy.ModuleInfo {
 // Provision implements caddy.Provisioner
 func (p *HTTPGate) Provision(ctx caddy.Context) error {
 	p.logger = ctx.Logger(p)
+	t, err := template.New("").Parse(indexSource)
+	if err != nil {
+		p.logger.Fatal("failed to parse index template", zap.Error(err))
+	}
+	p.indexTemplate = t
+
 	return nil
 }
 
@@ -58,9 +71,53 @@ func (p *HTTPGate) Validate() error {
 	return nil
 }
 
+func (p HTTPGate) internalServerError(e error) {
+	// TODO: Sentry
+	p.logger.Error("internal server error", zap.Error(e))
+}
+
 func (p HTTPGate) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
-	p.logger.Info(fmt.Sprintf("got req %s %s", r.Method, r.URL.Path))
-	return next.ServeHTTP(w, r)
+	var httpGate string
+	c, _ := r.Cookie("pf_httpgate")
+	if c != nil {
+		httpGate = c.Value
+	}
+
+	forceChallenge := false
+
+	if httpGate != "" {
+		ok, err := validate(httpGate)
+		if err != nil {
+			p.internalServerError(err)
+			return next.ServeHTTP(w, r) // fail open
+		}
+		if ok {
+			cookie := http.Cookie{
+				Name:    "pf_httpgate",
+				Value:   httpGate,
+				Expires: time.Now().Add(30 * time.Minute),
+			}
+			http.SetCookie(w, &cookie)
+			return next.ServeHTTP(w, r)
+		} else { // invalid token
+			forceChallenge = true
+		}
+	}
+
+	if forceChallenge || p.shouldChallenge(r) {
+		h, err := newHash()
+		if err != nil {
+			p.internalServerError(err)
+			return next.ServeHTTP(w, r) // fail open
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := p.indexTemplate.Execute(w, map[string]string{"hash": h}); err != nil {
+			p.internalServerError(err)
+		}
+		return nil
+	} else { // no challenge
+		return next.ServeHTTP(w, r)
+	}
 }
 
 // UnmarshalCaddyfile implements caddyfile.Unmarshaler
@@ -77,6 +134,12 @@ func parseCaddyfile(h httpcaddyfile.Helper) (caddyhttp.MiddlewareHandler, error)
 		}
 	}
 	return p, p.UnmarshalCaddyfile(h.Dispenser)
+}
+
+// shouldChallenge decides if an HTTP request should be challenged;
+func (p *HTTPGate) shouldChallenge(r *http.Request) bool {
+	// TODO
+	return true
 }
 
 // Interface guards

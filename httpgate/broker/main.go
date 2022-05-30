@@ -5,16 +5,18 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"flag"
-	"log"
 	"math/big"
 	"net/http"
 	"strings"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var (
 	listen     = flag.String("l", ":8080", "listen address")
 	hashExpiry = time.Hour
+	verbose    = flag.Bool("v", false, "enable verbose logging")
 )
 
 var cache = make(map[string]time.Time) // server hash to expiration timestamp
@@ -44,12 +46,12 @@ func validate(token, hash string) bool {
 
 	// Check if server hash is expired
 	if time.Now().After(cache[hash]) {
+		log.Debugf("Server hash %s expired, removing from cache", hash)
 		delete(cache, hash)
 		return false
 	}
 
-	fullHash := sha256.Sum256([]byte(hash + token))
-	return strings.HasSuffix(hex.EncodeToString(fullHash[:]), "000")
+	return strings.HasSuffix(sha256hash(hash+token), "000")
 }
 
 func sha256hash(s string) string {
@@ -57,55 +59,50 @@ func sha256hash(s string) string {
 	return hex.EncodeToString(fullHash[:])
 }
 
-// solve a hash into a token
-func solve(hash string) string {
-	for {
-		token, err := randomString(32)
-		if err != nil {
-			panic(err)
-		}
-		if strings.HasSuffix(hex.EncodeToString([]byte(sha256hash(sha256hash(hash+token)))), "000") {
-			return token
-		}
-	}
-}
-
 func main() {
 	flag.Parse()
+	if *verbose {
+		log.SetLevel(log.DebugLevel)
+	}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	// /validate?hash=<hash>&token=<token> to validate a token
+	http.HandleFunc("/validate", func(w http.ResponseWriter, r *http.Request) {
 		hash := r.URL.Query().Get("hash")
 		token := r.URL.Query().Get("token")
 
 		w.Header().Set("Content-Type", "text/plain")
 		if validate(token, hash) {
+			log.Debugf("Valid token %s for hash %s", token, hash)
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("OK"))
 		} else {
+			log.Debugf("Invalid token %s for hash %s", token, hash)
 			w.WriteHeader(http.StatusUnauthorized)
-			newHash, err := randomString(32)
-			if err != nil {
-				log.Println(err) // TODO: Sentry
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte("Error"))
-				return
-			}
-			cache[newHash] = time.Now().Add(hashExpiry)
-			w.Write([]byte(newHash))
 		}
 	})
 
+	// /new to request a new token
+	http.HandleFunc("/new", func(w http.ResponseWriter, r *http.Request) {
+		newHash, err := randomString(32)
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error"))
+			return
+		}
+		cache[newHash] = time.Now().Add(hashExpiry)
+		log.Debugf("Generated new hash %s", newHash)
+		w.Write([]byte(newHash))
+	})
+
 	http.HandleFunc("/invalidate", func(w http.ResponseWriter, r *http.Request) {
+		log.Debug("Invalidating all hashes")
 		cache = make(map[string]time.Time)
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	})
 
-	http.HandleFunc("/solve", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(solve(r.URL.Query().Get("hash"))))
-	})
-
-	log.Printf("Starting l7dos token broker on %s", *listen)
+	log.Printf("Starting httpgate token broker on %s", *listen)
 	err := http.ListenAndServe(*listen, nil)
 	if err != nil {
 		log.Fatal(err)

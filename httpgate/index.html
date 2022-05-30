@@ -97,7 +97,6 @@
             let token = randHex(32)
             const encoder = new TextEncoder();
             let hash_buf = await window.crypto.subtle.digest("SHA-256", encoder.encode(hash + token));
-            hash_buf = await window.crypto.subtle.digest("SHA-256", hash_buf);
             let hash_str = [...new Uint8Array(hash_buf)].map(x => x.toString(16).padStart(2, '0')).join('');
             if (hash_str.endsWith("0".repeat(3))) {
                 return token;
@@ -105,6 +104,17 @@
         }
     }
 
-    find_hash("foo").then(token => window.location = window.location.pathname + "?token=" + token)
+    function setCookie(cName, cValue, expMinutes) {
+        let date = new Date();
+        date.setTime(date.getTime() + (expMinutes * 60000));
+        const expires = "expires=" + date.toUTCString();
+        document.cookie = cName + "=" + cValue + "; " + expires + "; path=/";
+    }
+
+    let hash = "{{ .hash }}";
+    find_hash(hash).then(token => {
+        setCookie("pf_httpgate", hash + ":" + token, 30);
+        window.location.reload();
+    });
 </script>
 </html>
