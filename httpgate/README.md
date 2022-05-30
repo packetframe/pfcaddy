@@ -1,6 +1,6 @@
-# l7gate
+# httpgate
 
-Proof of Work (PoW) system for Caddy.
+HTTP (D)DoS mitigation and bot management system
 
 1. Server sends a random hex string to the client
 2. Client brute forces a random hex string such that `SHA256(server's string + client's string)` has at least n leading zeroes in binary

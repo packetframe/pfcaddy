@@ -1,4 +1,4 @@
-package packetframe_pow
+package httpgate
 
 import (
 	"fmt"
@@ -12,12 +12,12 @@ import (
 )
 
 func init() {
-	caddy.RegisterModule(PoW{})
-	httpcaddyfile.RegisterHandlerDirective("packetframe_pow", parseCaddyfile)
+	caddy.RegisterModule(HTTPGate{})
+	httpcaddyfile.RegisterHandlerDirective("packetframe_httpgate", parseCaddyfile)
 }
 
-// PoW represents the Proof of Work module
-type PoW struct {
+// HTTPGate represents the HTTP gate module
+type HTTPGate struct {
 	// Client challenge intensity mode
 	Mode string `json:"mode,omitempty"`
 
@@ -25,21 +25,21 @@ type PoW struct {
 }
 
 // CaddyModule returns the Caddy module information.
-func (PoW) CaddyModule() caddy.ModuleInfo {
+func (HTTPGate) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID:  "http.handlers.packetframe_pow",
-		New: func() caddy.Module { return new(PoW) },
+		ID:  "http.handlers.packetframe_httpgate",
+		New: func() caddy.Module { return new(HTTPGate) },
 	}
 }
 
 // Provision implements caddy.Provisioner
-func (p *PoW) Provision(ctx caddy.Context) error {
+func (p *HTTPGate) Provision(ctx caddy.Context) error {
 	p.logger = ctx.Logger(p)
 	return nil
 }
 
 // Validate implements caddy.Validator
-func (p *PoW) Validate() error {
+func (p *HTTPGate) Validate() error {
 	switch p.Mode {
 	case "never":
 		// "never" disables the module
@@ -58,19 +58,19 @@ func (p *PoW) Validate() error {
 	return nil
 }
 
-func (p PoW) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
+func (p HTTPGate) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 	p.logger.Info(fmt.Sprintf("got req %s %s", r.Method, r.URL.Path))
 	return next.ServeHTTP(w, r)
 }
 
 // UnmarshalCaddyfile implements caddyfile.Unmarshaler
-func (p *PoW) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
+func (p *HTTPGate) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 	return nil
 }
 
-// parseCaddyfile unmarshals tokens from h into a new PoW
+// parseCaddyfile unmarshals tokens from h into a new HTTPGate
 func parseCaddyfile(h httpcaddyfile.Helper) (caddyhttp.MiddlewareHandler, error) {
-	var p PoW
+	var p HTTPGate
 	for h.Next() {
 		if !h.Args(&p.Mode) {
 			return nil, h.ArgErr()
@@ -81,8 +81,8 @@ func parseCaddyfile(h httpcaddyfile.Helper) (caddyhttp.MiddlewareHandler, error)
 
 // Interface guards
 var (
-	_ caddy.Provisioner           = (*PoW)(nil)
-	_ caddy.Validator             = (*PoW)(nil)
-	_ caddyhttp.MiddlewareHandler = (*PoW)(nil)
-	_ caddyfile.Unmarshaler       = (*PoW)(nil)
+	_ caddy.Provisioner           = (*HTTPGate)(nil)
+	_ caddy.Validator             = (*HTTPGate)(nil)
+	_ caddyhttp.MiddlewareHandler = (*HTTPGate)(nil)
+	_ caddyfile.Unmarshaler       = (*HTTPGate)(nil)
 )

@@ -1,6 +1,6 @@
 :80 {
     route * {
-        packetframe_pow always
+        packetframe_httpgate always
         respond "test"
     }
 }

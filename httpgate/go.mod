@@ -1,4 +1,4 @@
-module github.com/packetframe/pfcaddy
+module httpgate
 
 go 1.18
 
