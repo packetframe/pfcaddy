@@ -1,0 +1,109 @@
+<html lang="en">
+<head>
+    <style>
+        html {
+            background-color: black;
+            text-align: center;
+        }
+
+        body {
+            background-color: black;
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+        }
+
+        a {
+            color: white;
+        }
+
+        h1 {
+            font-size: 24px;
+        }
+
+        img {
+            position: absolute;
+            z-index: 0;
+        }
+
+        .spinner {
+            background-color: transparent;
+            margin: 0 auto;
+
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            overflow: hidden;
+
+            width: 81px;
+            height: 53px;
+        }
+
+        .line {
+            width: 100%;
+            height: 10%;
+            background-color: black;
+            animation: slide 5s infinite;
+            animation-delay: var(--delay);
+            margin-left: -100%;
+            z-index: 10;
+            margin-bottom: 5%;
+        }
+
+        @keyframes slide {
+            0% {
+                margin-left: -100%;
+            }
+            10% {
+                margin-left: -100%;
+            }
+            25% {
+                margin-left: 0%
+            }
+            75% {
+                margin-left: 0%
+            }
+            90% {
+                margin-left: 105%;
+            }
+            100% {
+                margin-left: 105%;
+            }
+        }
+    </style>
+    <title>Checking your browser...</title>
+</head>
+<body>
+<div class="spinner">
+    <img src="https://packetframe.com/cloud-flat.png" width="81px" height="53px" alt="logo-spinner"/>
+    <div class="line" style="--delay:0s"></div>
+    <div class="line" style="--delay:0.5s"></div>
+    <div class="line" style="--delay:1s"></div>
+</div>
+<h1>Checking your browser before accessing<br><b>example.com</b></h1>
+<a href="https://packetframe.com">Powered by Packetframe</a>
+</body>
+
+<script defer>
+    const randHex = size => [...Array(size)].map(() => Math.floor(Math.random() * 16).toString(16)).join('').toString();
+
+    async function find_hash(hash) {
+        while (true) {
+            let token = randHex(32)
+            const encoder = new TextEncoder();
+            let hash_buf = await window.crypto.subtle.digest("SHA-256", encoder.encode(hash + token));
+            let hash_str = [...new Uint8Array(hash_buf)].map(x => x.toString(16).padStart(2, '0')).join('');
+            if (hash_str.endsWith("0".repeat(3))) {
+                return token;
+            }
+        }
+    }
+
+    find_hash("foo").then(token => window.location = window.location.pathname + "?token=" + token)
+</script>
+</html>

@@ -1,0 +1,6 @@
+:80 {
+    route * {
+        packetframe_pow always
+        respond "test"
+    }
+}
