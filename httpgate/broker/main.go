@@ -52,6 +52,11 @@ func validate(token, hash string) bool {
 	return strings.HasSuffix(hex.EncodeToString(fullHash[:]), "000")
 }
 
+func sha256hash(s string) string {
+	fullHash := sha256.Sum256([]byte(s))
+	return hex.EncodeToString(fullHash[:])
+}
+
 // solve a hash into a token
 func solve(hash string) string {
 	for {
@@ -59,8 +64,7 @@ func solve(hash string) string {
 		if err != nil {
 			panic(err)
 		}
-		fullHash := sha256.Sum256([]byte(hash + token))
-		if strings.HasSuffix(hex.EncodeToString(fullHash[:]), "000") {
+		if strings.HasSuffix(hex.EncodeToString([]byte(sha256hash(sha256hash(hash+token)))), "000") {
 			return token
 		}
 	}

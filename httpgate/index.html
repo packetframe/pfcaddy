@@ -97,6 +97,7 @@
             let token = randHex(32)
             const encoder = new TextEncoder();
             let hash_buf = await window.crypto.subtle.digest("SHA-256", encoder.encode(hash + token));
+            hash_buf = await window.crypto.subtle.digest("SHA-256", hash_buf);
             let hash_str = [...new Uint8Array(hash_buf)].map(x => x.toString(16).padStart(2, '0')).join('');
             if (hash_str.endsWith("0".repeat(3))) {
                 return token;
