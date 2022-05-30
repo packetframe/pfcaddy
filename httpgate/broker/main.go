@@ -19,7 +19,12 @@ var (
 	verbose    = flag.Bool("v", false, "enable verbose logging")
 )
 
-var cache = make(map[string]time.Time) // server hash to expiration timestamp
+type cacheEntry struct {
+	created   time.Time // Time of creation
+	validated bool      // Has this hash been validated by a client?
+}
+
+var cache = make(map[string]*cacheEntry) // server hash to expiration timestamp
 
 const hexLetters = "0123456789abcdef"
 
@@ -39,13 +44,14 @@ func randomString(length int) (string, error) {
 
 // validate checks that a client provided token matches the given server hash
 func validate(token, hash string) bool {
-	_, found := cache[hash]
+	entry, found := cache[hash]
 	if !found {
 		return false
 	}
+	entry.validated = true
 
 	// Check if server hash is expired
-	if time.Now().After(cache[hash]) {
+	if time.Now().After(entry.created.Add(hashExpiry)) {
 		log.Debugf("Server hash %s expired, removing from cache", hash)
 		delete(cache, hash)
 		return false
@@ -64,6 +70,19 @@ func main() {
 	if *verbose {
 		log.SetLevel(log.DebugLevel)
 	}
+
+	// Purge cache of unvalidated entries every 30 seconds
+	purgeTicker := time.NewTicker(30 * time.Second)
+	go func() {
+		for range purgeTicker.C {
+			for hash, entry := range cache {
+				if !entry.validated {
+					log.Debugf("Purging expired server hash %s", hash)
+					delete(cache, hash)
+				}
+			}
+		}
+	}()
 
 	// /validate?hash=<hash>&token=<token> to validate a token
 	http.HandleFunc("/validate", func(w http.ResponseWriter, r *http.Request) {
@@ -90,14 +109,17 @@ func main() {
 			w.Write([]byte("Error"))
 			return
 		}
-		cache[newHash] = time.Now().Add(hashExpiry)
+		cache[newHash] = &cacheEntry{
+			created:   time.Now(),
+			validated: false,
+		}
 		log.Debugf("Generated new hash %s", newHash)
 		w.Write([]byte(newHash))
 	})
 
 	http.HandleFunc("/invalidate", func(w http.ResponseWriter, r *http.Request) {
 		log.Debug("Invalidating all hashes")
-		cache = make(map[string]time.Time)
+		cache = make(map[string]*cacheEntry)
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	})
