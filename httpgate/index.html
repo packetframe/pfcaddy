@@ -29,62 +29,10 @@
             position: absolute;
             z-index: 0;
         }
-
-        .spinner {
-            background-color: transparent;
-            margin: 0 auto;
-
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            overflow: hidden;
-
-            width: 81px;
-            height: 53px;
-        }
-
-        .line {
-            width: 100%;
-            height: 10%;
-            background-color: black;
-            animation: slide 5s infinite;
-            animation-delay: var(--delay);
-            margin-left: -100%;
-            z-index: 10;
-            margin-bottom: 5%;
-        }
-
-        @keyframes slide {
-            0% {
-                margin-left: -100%;
-            }
-            10% {
-                margin-left: -100%;
-            }
-            25% {
-                margin-left: 0%
-            }
-            75% {
-                margin-left: 0%
-            }
-            90% {
-                margin-left: 105%;
-            }
-            100% {
-                margin-left: 105%;
-            }
-        }
     </style>
     <title>Checking your browser...</title>
 </head>
 <body>
-<div class="spinner">
-    <img src="https://packetframe.com/cloud-flat.png" width="81px" height="53px" alt="logo-spinner"/>
-    <div class="line" style="--delay:0s"></div>
-    <div class="line" style="--delay:0.5s"></div>
-    <div class="line" style="--delay:1s"></div>
-</div>
 <h1>Checking your browser before accessing<br><b>example.com</b></h1>
 <a href="https://packetframe.com">Powered by Packetframe</a>
 </body>

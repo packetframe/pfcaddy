@@ -57,9 +57,6 @@ func (p *HTTPGate) Validate() error {
 	case "never":
 		// "never" disables the module
 		return nil
-	case "verified":
-		// "verified" will only challenge on verified malicious traffic
-		return nil
 	case "detect":
 		// "detect" lets the server decide when to challenge the client
 		return nil
@@ -121,11 +118,11 @@ func (p HTTPGate) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyht
 }
 
 // UnmarshalCaddyfile implements caddyfile.Unmarshaler
-func (p *HTTPGate) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
+func (p *HTTPGate) UnmarshalCaddyfile(_ *caddyfile.Dispenser) error {
 	return nil
 }
 
-// parseCaddyfile unmarshals tokens from h into a new HTTPGate
+// parseCaddyfile unmarshalls tokens from h into a new HTTPGate
 func parseCaddyfile(h httpcaddyfile.Helper) (caddyhttp.MiddlewareHandler, error) {
 	var p HTTPGate
 	for h.Next() {
@@ -136,10 +133,21 @@ func parseCaddyfile(h httpcaddyfile.Helper) (caddyhttp.MiddlewareHandler, error)
 	return p, p.UnmarshalCaddyfile(h.Dispenser)
 }
 
-// shouldChallenge decides if an HTTP request should be challenged;
+// shouldChallenge decides if an HTTP request should be challenged
 func (p *HTTPGate) shouldChallenge(r *http.Request) bool {
-	// TODO
-	return true
+	switch p.Mode {
+	case "never":
+		// "never" disables the module
+		return false
+	case "detect":
+		// "detect" lets the server decide when to challenge the client
+		return likelyMalicious(r)
+	case "always":
+		return true
+	default:
+		p.internalServerError(fmt.Errorf("code error! invalid mode: %s", p.Mode))
+		return true
+	}
 }
 
 // Interface guards

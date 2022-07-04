@@ -14,9 +14,10 @@ import (
 )
 
 var (
-	listen     = flag.String("l", ":8080", "listen address")
-	hashExpiry = time.Hour
-	verbose    = flag.Bool("v", false, "enable verbose logging")
+	listen                = flag.String("l", ":8080", "listen address")
+	tokenValidityDuration = flag.Int("t", 60, "token validity duration in minutes")
+	tokenValidationWait   = flag.Int("w", 60, "how long to wait for a token to be validated before deleting it in seconds")
+	verbose               = flag.Bool("v", false, "enable verbose logging")
 )
 
 type cacheEntry struct {
@@ -51,7 +52,7 @@ func validate(token, hash string) bool {
 	entry.validated = true
 
 	// Check if server hash is expired
-	if time.Now().After(entry.created.Add(hashExpiry)) {
+	if time.Now().After(entry.created.Add(time.Duration(*tokenValidityDuration) * time.Minute)) {
 		log.Debugf("Server hash %s expired, removing from cache", hash)
 		delete(cache, hash)
 		return false
@@ -71,12 +72,12 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
-	// Purge cache of unvalidated entries every 30 seconds
-	purgeTicker := time.NewTicker(30 * time.Second)
+	// Purge cache of unvalidated entries
+	purgeTicker := time.NewTicker(time.Second * time.Duration(*tokenValidationWait/2))
 	go func() {
 		for range purgeTicker.C {
 			for hash, entry := range cache {
-				if !entry.validated {
+				if !entry.validated && time.Now().After(entry.created.Add(time.Duration(*tokenValidationWait)*time.Second)) {
 					log.Debugf("Purging expired server hash %s", hash)
 					delete(cache, hash)
 				}

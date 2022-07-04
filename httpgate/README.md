@@ -7,7 +7,6 @@ HTTP (D)DoS mitigation and bot management system
 3. Client sends its string to the server
 4. Server checks if the client's string is correct
 
-TODO: ratelimiting on session broker to avoid resource exhaustion
-TODO: replace loading spinner with something smaller and locally hosted
-TODO: compress challenge page to be as small as possible
-TODO: sentry
+- TODO: ratelimiting on session broker to avoid resource exhaustion
+- TODO: compress challenge page to be as small as possible
+- TODO: sentry
