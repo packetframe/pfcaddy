@@ -12,5 +12,3 @@ priority: extra
 contents:
   - src: caddy
     dst: /usr/bin/caddy
-  - src: caddy.service
-    dst: /usr/lib/systemd/system/caddy.service
