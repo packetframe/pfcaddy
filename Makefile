@@ -1,4 +1,4 @@
-all: coraza build coraza-conf
+all: dep coraza build coraza-conf
 
 dep:
 	go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
@@ -19,3 +19,6 @@ coraza-conf:
 
 build:
 	bash build.sh
+
+clean:
+	rm -rf coraza* coreruleset*
