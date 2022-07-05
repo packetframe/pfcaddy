@@ -25,4 +25,4 @@ clean:
 	rm -rf coraza* coreruleset*
 
 release:
-	nfpm package --packager deb --config nfpm.yml
+	nfpm package --packager deb --config nfpm.yml -t pfcaddy.deb
