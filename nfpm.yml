@@ -1,0 +1,16 @@
+name: caddy
+arch: amd64
+platform: linux
+version: "v0.0.0"
+homepage: https://github.com/packetframe/pfcaddy
+maintainer: Nate Sales <nate@packetframe.com>
+vendor: Packetframe
+description: Packetframe Edge Daemon
+license: GNU GPL-3.0
+section: default
+priority: extra
+contents:
+  - src: caddy
+    dst: /usr/bin/caddy
+  - src: caddy.service
+    dst: /usr/lib/systemd/system/caddy.service
