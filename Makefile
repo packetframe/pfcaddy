@@ -2,6 +2,7 @@ all: dep coraza build coraza-conf
 
 dep:
 	go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+	go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
 
 coraza:
 	rm -rf coraza
@@ -22,3 +23,6 @@ build:
 
 clean:
 	rm -rf coraza* coreruleset*
+
+release:
+	nfpm package --packager deb --config nfpm.yml
