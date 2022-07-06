@@ -25,7 +25,8 @@ func init() {
 // HTTPGate represents the HTTP gate module
 type HTTPGate struct {
 	// Client challenge intensity mode
-	Mode string `json:"mode,omitempty"`
+	Mode   string `json:"mode,omitempty"`
+	Broker string `json:"broker,omitempty"`
 
 	indexTemplate *template.Template
 	logger        *zap.Logger
@@ -65,6 +66,9 @@ func (p *HTTPGate) Validate() error {
 	default:
 		return fmt.Errorf("invalid mode: %s", p.Mode)
 	}
+	if p.Broker == "" {
+		return fmt.Errorf("broker is required")
+	}
 	return nil
 }
 
@@ -83,7 +87,7 @@ func (p HTTPGate) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyht
 	forceChallenge := false
 
 	if httpGate != "" {
-		ok, err := validate(httpGate)
+		ok, err := validate(p.Broker, httpGate)
 		if err != nil {
 			p.internalServerError(err)
 			return next.ServeHTTP(w, r) // fail open
@@ -102,7 +106,7 @@ func (p HTTPGate) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyht
 	}
 
 	if forceChallenge || p.shouldChallenge(r) {
-		h, err := newHash()
+		h, err := newHash(p.Broker)
 		if err != nil {
 			p.internalServerError(err)
 			return next.ServeHTTP(w, r) // fail open
@@ -126,6 +130,9 @@ func (p *HTTPGate) UnmarshalCaddyfile(_ *caddyfile.Dispenser) error {
 func parseCaddyfile(h httpcaddyfile.Helper) (caddyhttp.MiddlewareHandler, error) {
 	var p HTTPGate
 	for h.Next() {
+		if !h.Args(&p.Broker) {
+			return nil, h.ArgErr()
+		}
 		if !h.Args(&p.Mode) {
 			return nil, h.ArgErr()
 		}

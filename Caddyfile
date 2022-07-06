@@ -1,6 +1,6 @@
 localhost {
     route * {
-        packetframe_httpgate always
+        packetframe_httpgate https://httpgate-broker.packetframe.com always
         respond "test"
     }
 }

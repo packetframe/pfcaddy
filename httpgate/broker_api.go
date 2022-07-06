@@ -7,10 +7,8 @@ import (
 	"strings"
 )
 
-const broker = "http://localhost:8080"
-
 // newHash requests a new hash from the broker
-func newHash() (string, error) {
+func newHash(broker string) (string, error) {
 	resp, err := http.Get(broker + "/new")
 	if err != nil {
 		return "", err
@@ -26,7 +24,7 @@ func newHash() (string, error) {
 }
 
 // validate verifies a token/hash against the broker
-func validate(httpGate string) (bool, error) {
+func validate(broker, httpGate string) (bool, error) {
 	parts := strings.Split(httpGate, ":")
 	if len(parts) != 2 {
 		return false, fmt.Errorf("invalid token")
