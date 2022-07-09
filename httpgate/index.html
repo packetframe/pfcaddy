@@ -38,15 +38,19 @@
 </body>
 
 <script defer>
+    async function sha256hash(plain) {
+        const encoder = new TextEncoder();
+        let hash_buf = await window.crypto.subtle.digest("SHA-256", encoder.encode(plain));
+        return [...new Uint8Array(hash_buf)].map(x => x.toString(16).padStart(2, '0')).join('');
+    }
+
     const randHex = size => [...Array(size)].map(() => Math.floor(Math.random() * 16).toString(16)).join('').toString();
 
     async function find_hash(hash) {
         while (true) {
             let token = randHex(32)
-            const encoder = new TextEncoder();
-            let hash_buf = await window.crypto.subtle.digest("SHA-256", encoder.encode(hash + token));
-            let hash_str = [...new Uint8Array(hash_buf)].map(x => x.toString(16).padStart(2, '0')).join('');
-            if (hash_str.endsWith("0".repeat(3))) {
+            let hash_str = await sha256hash(hash + token);
+            if (hash_str.endsWith("0".repeat(4))) {
                 return token;
             }
         }
