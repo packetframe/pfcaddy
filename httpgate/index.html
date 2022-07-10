@@ -1,5 +1,6 @@
 <html lang="en">
 <head>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
     <style>
         html {
             background-color: black;
@@ -7,14 +8,15 @@
         }
 
         body {
-            background-color: black;
             color: white;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            -webkit-transform: translate(-50%, -50%);
-            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 0;
+            margin: 0;
         }
 
         a {
@@ -23,17 +25,72 @@
 
         h1 {
             font-size: 24px;
+            margin-bottom: 0;
         }
 
         img {
             position: absolute;
             z-index: 0;
         }
+
+        .spinner {
+            background-color: transparent;
+            margin: 0 auto;
+
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            overflow: hidden;
+
+            width: 135px;
+            height: 88px;
+        }
+
+        .line {
+            width: 100%;
+            height: 10%;
+            background-color: black;
+            animation: slide 5s infinite;
+            animation-delay: var(--delay);
+            margin-left: -100%;
+            z-index: 10;
+            margin-bottom: 5%;
+        }
+
+        @keyframes slide {
+            0% {
+                margin-left: -100%;
+            }
+            10% {
+                margin-left: -100%;
+            }
+            25% {
+                margin-left: 0;
+            }
+            75% {
+                margin-left: 0;
+            }
+            90% {
+                margin-left: 105%;
+            }
+            100% {
+                margin-left: 105%;
+            }
+        }
     </style>
     <title>Checking your browser...</title>
 </head>
 <body>
-<h1>Checking your browser before accessing<br><b>example.com</b></h1>
+<div class="spinner">
+    <img src="data:image/png;base64,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"
+         width="135" height="88" alt="logo-spinner"/>
+    <div class="line" style="--delay:0s"></div>
+    <div class="line" style="--delay:0.5s"></div>
+    <div class="line" style="--delay:1s"></div>
+</div>
+<h1>Checking your browser before accessing<br><b><span id="domain"></span></b></h1>
+<p>This process is automatic and will take a couple seconds.</p>
 <a href="https://packetframe.com">Powered by Packetframe</a>
 </body>
 
@@ -64,6 +121,7 @@
     }
 
     let hash = "{{ .hash }}";
+    document.getElementById("domain").innerHTML = window.location.hostname;
     find_hash(hash).then(token => {
         setCookie("pf_httpgate", hash + ":" + token, 30);
         window.location.reload();
