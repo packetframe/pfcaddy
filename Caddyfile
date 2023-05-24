@@ -1,6 +1,7 @@
-localhost {
+http://localhost:8083 {
+    header Server packetframe
     route * {
-        packetframe_httpgate https://httpgate-broker.packetframe.com always
+        packetframe_httpgate http://localhost:8080 detect "coraza.conf-recommended,coreruleset/crs-setup.conf.example,coreruleset/rules/*.conf"
         respond "test"
     }
 }
